@@ -7,7 +7,6 @@ import (
 
 type Character struct {
 	CharacterName string
-	CatchPhrases  []string
 }
 
 func (c Character) Say(msg string) {
@@ -32,26 +31,65 @@ func (c Character) Say(msg string) {
 // not storing a pointer in the struct because
 // the struct should own and not share this copy of the weapon
 
-type CombatCharacter struct {
-	Character
-	DefendModule
-	HP          int
+type IDefend interface {
+	TakeDamage(nDamage int, bBlockable bool) bool
+	IsDead() bool
+}
+type IAttack interface {
+	Attack(d IDefend)
+}
+
+type CombatDefend struct {
 	MaxHP       int
+	HP          int
 	DodgeChance float32
 	Armour      int
-	Level       int
-	weapon      Weapon
 }
 
-func (c CombatCharacter) IsDead() bool {
-	return c.HP < 0
+func (c CombatDefend) TakeDamage(nDamage int, bBlockable bool) bool {
+	dodged := false
+	if rand.Float32() > c.DodgeChance {
+		if bBlockable {
+			c.HP -= nDamage - c.Armour
+		} else {
+			c.HP -= nDamage
+		}
+	} else {
+		fmt.Println("Attack dodged, no damage was dealt")
+		dodged = true
+	}
+	return dodged
 }
 
+func (c CombatDefend) IsDead() bool {
+	if c.HP < 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+type Enemy struct {
+	Character
+	CombatDefend
+	MaxHP           int
+	HP              int
+	Level           int
+	NextAttackBonus int
+	weapon          Weapon
+}
+
+// use embedding for code sharing, not for composition like with DefendComponent and stuff
+// we have Enemy and MainCharacter both with Level but we do not repeat code so we do not
+// care
 type MainCharacter struct {
-	CombatCharacter
+	Character
+	CombatDefend
 	XP              int
+	Level           int
 	NextAttackBonus int
 	CritChance      float32
+	weapon          Weapon
 }
 
 func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
@@ -65,14 +103,12 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	}
 
 	return &MainCharacter{
-		CombatCharacter: CombatCharacter{
-			Character:   Character{CharacterName: name},
-			MaxHP:       20,
-			HP:          20,
-			DodgeChance: 0.05,
-			Level:       1,
-			weapon:      weapon,
-		},
+		Character:   Character{CharacterName: name},
+		MaxHP:       20,
+		HP:          20,
+		DodgeChance: 0.05,
+		Level:       1,
+		weapon:      weapon,
 	}
 
 }
@@ -131,38 +167,21 @@ func (m MainCharacter) StatMultiplier() float32 {
 	return 1 + ((float32(m.Level) * 0.1) - 0.1)
 }
 
-type Enemy struct {
-	CombatCharacter
-}
-
-type IDefend interface {
-	TakeDamage(nDamage int, bBlockable bool)
-}
-
-// because we have a common implementation we want to share
-// not just using the interface, because we might eventually want the character
-// and the objects to have a different take damage implementation
-// This implementation uses an HP so we have a struct with HP in it as well
-type DefendModule struct {
-	HP     int
-	Armour int
-}
-
-func (d DefendModule) TakeDamage(nDamage int, bBlockable bool) {
-	if bBlockable {
-		d.HP -= nDamage - d.Armour
-	} else {
-		d.HP -= nDamage
-	}
-}
-
 // could have just added a TakeDamage method to this AttackableObject struct
 // but then we would be repeating code, so make an implementation and add it to all
 type AttackableObject struct {
-	DefendModule
 	Name   string
 	HP     int
 	Armour int
+}
+
+func (a AttackableObject) TakeDamage(nDamage int, bBlockable bool) bool {
+	if bBlockable {
+		a.HP -= nDamage - a.Armour
+	} else {
+		a.HP -= nDamage
+	}
+	return true
 }
 
 func NewTree(health int) *AttackableObject {
