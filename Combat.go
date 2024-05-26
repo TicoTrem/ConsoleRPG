@@ -5,25 +5,6 @@ import (
 	"math/rand"
 )
 
-type DamageType int
-
-const (
-	Regular DamageType = iota
-	Poison
-	Bleeding
-	Electric
-)
-
-type Weapon struct {
-	Name             string
-	BaseDamage       int
-	WeaponDamageType DamageType
-	DescriptorWord   string
-	AttackMessage    string
-	CritChance       float32
-	CriticalBonus    float32
-}
-
 type Character struct {
 	CharacterName string
 	CatchPhrases  []string
@@ -31,10 +12,6 @@ type Character struct {
 
 func (c Character) Say(msg string) {
 	fmt.Printf("%v: %v", c.CharacterName, msg)
-}
-
-type IDefend interface {
-	TakeDamage(damageToTake int, isBlockable bool)
 }
 
 // not saying "pick a DefendModule implementation", instead it is saying
@@ -48,8 +25,16 @@ type IDefend interface {
 // and Enemy in to the CombatCharacter struct, if there is anything not
 // identical, don't think about it, just add it to the enemy class with its
 // own implementation
+
+// ALSO I'm planning on just not using some featuers like interfaces until I find a use for them
+// instead of forcing them where I think they would be the best
+
+// not storing a pointer in the struct because
+// the struct should own and not share this copy of the weapon
+
 type CombatCharacter struct {
 	Character
+	DefendModule
 	HP          int
 	MaxHP       int
 	DodgeChance float32
@@ -58,7 +43,16 @@ type CombatCharacter struct {
 	weapon      Weapon
 }
 
+func (c CombatCharacter) IsDead() bool {
+	return c.HP < 0
+}
 
+type MainCharacter struct {
+	CombatCharacter
+	XP              int
+	NextAttackBonus int
+	CritChance      float32
+}
 
 func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	if name == "" {
@@ -66,7 +60,8 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	}
 
 	if weapon.Name == "" {
-		// weapon not set, set to default o ffists
+		// weapon not set, set to default to fists
+		weapon = *NewFists()
 	}
 
 	return &MainCharacter{
@@ -82,45 +77,19 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 
 }
 
-func (c CombatCharacter) IsDead() bool {
-	return c.HP < 0
-}
-
-type Enemy struct {
-	CombatCharacter
-}
-
-// Go doesnt have the thing where an if an embedded thingy satisfies an interface,
-// you can assign that object to the interface type, this means that it was never meant
-// to have the level of abstraction where both MainCharacter and Enemy implemented a defend
-// module with different implementations
-func (e Enemy) TakeDamage(nDamage int, bBlockable bool) {
-	if bBlockable {
-		e.HP -= nDamage - e.Armour
-	} else {
-		e.HP -= nDamage
-	}
-}
-
-type MainCharacter struct {
-	CombatCharacter
-	XP              int
-	NextAttackBonus int
-	CritChance      float32
-}
-
-func (m MainCharacter) Attack(e Enemy) {
+// now we can attack anything that can take damage
+func (m MainCharacter) Attack(d IDefend) {
 	isCritical := m.IsCritical(m.weapon)
 
 	damageToDeal := m.CalculateDamage(m.weapon, isCritical)
-	e.TakeDamage(damageToDeal, true)
+	d.TakeDamage(damageToDeal, true)
 	fmt.Printf("%v used their %v and dealt %v damage to %v\n%v now has %v/%v health",
 		m.CharacterName,
 		m.weapon.Name,
 		damageToDeal,
-		e.CharacterName,
-		e.CharacterName,
-		e.HP, e.MaxHP)
+		m.CharacterName,
+		m.CharacterName,
+		m.HP, m.MaxHP)
 
 	if isCritical {
 		fmt.Println("Critical Hit!")
@@ -160,4 +129,46 @@ func (m MainCharacter) LevelUp() {
 
 func (m MainCharacter) StatMultiplier() float32 {
 	return 1 + ((float32(m.Level) * 0.1) - 0.1)
+}
+
+type Enemy struct {
+	CombatCharacter
+}
+
+type IDefend interface {
+	TakeDamage(nDamage int, bBlockable bool)
+}
+
+// because we have a common implementation we want to share
+// not just using the interface, because we might eventually want the character
+// and the objects to have a different take damage implementation
+// This implementation uses an HP so we have a struct with HP in it as well
+type DefendModule struct {
+	HP     int
+	Armour int
+}
+
+func (d DefendModule) TakeDamage(nDamage int, bBlockable bool) {
+	if bBlockable {
+		d.HP -= nDamage - d.Armour
+	} else {
+		d.HP -= nDamage
+	}
+}
+
+// could have just added a TakeDamage method to this AttackableObject struct
+// but then we would be repeating code, so make an implementation and add it to all
+type AttackableObject struct {
+	DefendModule
+	Name   string
+	HP     int
+	Armour int
+}
+
+func NewTree(health int) *AttackableObject {
+	return &AttackableObject{
+		Name:   "Tree",
+		HP:     health,
+		Armour: 1,
+	}
 }
