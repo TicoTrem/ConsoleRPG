@@ -26,7 +26,7 @@ func NewTrainingSword() *Weapon {
 		BaseDamage:       10,
 		WeaponDamageType: Regular,
 		DescriptorWord:   "Dull",
-		AttackMessage:    "I guess it did something...",
+		AttackMessage:    "It might have done something...",
 		CritChance:       0.12,
 		CriticalBonus:    1.50,
 	}

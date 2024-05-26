@@ -5,14 +5,6 @@ import (
 	"math/rand"
 )
 
-type Character struct {
-	CharacterName string
-}
-
-func (c Character) Say(msg string) {
-	fmt.Printf("%v: %v", c.CharacterName, msg)
-}
-
 // not saying "pick a DefendModule implementation", instead it is saying
 // "This has all the methods and attributes of this DefendModule, which is an implementation without an interface"
 // If it had an interface, we could specify a different implementation of the Defend() method for each different ComatCharacter
@@ -39,14 +31,16 @@ type IAttack interface {
 	Attack(d IDefend)
 }
 
-type CombatDefend struct {
+type CombatCharacter struct {
 	MaxHP       int
 	HP          int
 	DodgeChance float32
 	Armour      int
+	Level       int
+	weapon      Weapon
 }
 
-func (c CombatDefend) TakeDamage(nDamage int, bBlockable bool) bool {
+func (c *CombatCharacter) TakeDamage(nDamage int, bBlockable bool) bool {
 	dodged := false
 	if rand.Float32() > c.DodgeChance {
 		if bBlockable {
@@ -61,7 +55,7 @@ func (c CombatDefend) TakeDamage(nDamage int, bBlockable bool) bool {
 	return dodged
 }
 
-func (c CombatDefend) IsDead() bool {
+func (c CombatCharacter) IsDead() bool {
 	if c.HP < 0 {
 		return true
 	} else {
@@ -69,14 +63,61 @@ func (c CombatDefend) IsDead() bool {
 	}
 }
 
+func (c CombatCharacter) StatMultiplier() float32 {
+	return 1 + ((float32(c.Level) * 0.1) - 0.1)
+}
+
+type Character struct {
+	CharacterName string
+	CatchPhrases  []string
+}
+
+func (c Character) Say(msg string) {
+	fmt.Printf("%v: %v", c.CharacterName, msg)
+}
+
 type Enemy struct {
 	Character
-	CombatDefend
-	MaxHP           int
-	HP              int
-	Level           int
-	NextAttackBonus int
-	weapon          Weapon
+	CombatCharacter
+}
+
+func (e Enemy) Attack(d IDefend) {
+	isCritical := e.isCritical(e.weapon)
+
+	damageToDeal := e.calculateDamage(e.weapon, isCritical)
+	bHit := d.TakeDamage(damageToDeal, true)
+	if bHit {
+		fmt.Printf("%v used their %v and dealt %v damage to %v\n%v now has %v/%v health",
+			e.CharacterName,
+			e.weapon.Name,
+			damageToDeal,
+			e.CharacterName,
+			e.CharacterName,
+			e.HP, e.MaxHP)
+
+		if isCritical {
+			fmt.Println("Critical Hit!")
+		}
+	}
+
+}
+
+func (e Enemy) calculateDamage(weapon Weapon, isCritical bool) int {
+	damage := int(float32(weapon.BaseDamage) * e.StatMultiplier())
+
+	if isCritical {
+		damage *= int(e.weapon.CriticalBonus)
+	}
+
+	return damage
+}
+
+func (e Enemy) isCritical(w Weapon) bool {
+	critChance := w.CritChance
+
+	rand := rand.Float32()
+	// if the random float is less than crit chance, it is a critical hit
+	return rand < critChance
 }
 
 // use embedding for code sharing, not for composition like with DefendComponent and stuff
@@ -84,12 +125,9 @@ type Enemy struct {
 // care
 type MainCharacter struct {
 	Character
-	CombatDefend
-	XP              int
-	Level           int
-	NextAttackBonus int
-	CritChance      float32
-	weapon          Weapon
+	CombatCharacter
+	XP         int
+	CritChance float32
 }
 
 func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
@@ -103,38 +141,36 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	}
 
 	return &MainCharacter{
-		Character:   Character{CharacterName: name},
-		MaxHP:       20,
-		HP:          20,
-		DodgeChance: 0.05,
-		Level:       1,
-		weapon:      weapon,
+		Character:       Character{CharacterName: name, CatchPhrases: []string{"Yahoooo", "get rekt kid", "pfft Bozo"}},
+		CombatCharacter: CombatCharacter{MaxHP: 20, HP: 20, DodgeChance: 0.05, Armour: 0, Level: 1, weapon: weapon},
 	}
 
 }
 
 // now we can attack anything that can take damage
 func (m MainCharacter) Attack(d IDefend) {
-	isCritical := m.IsCritical(m.weapon)
+	isCritical := m.isCritical(m.weapon)
 
-	damageToDeal := m.CalculateDamage(m.weapon, isCritical)
-	d.TakeDamage(damageToDeal, true)
-	fmt.Printf("%v used their %v and dealt %v damage to %v\n%v now has %v/%v health",
-		m.CharacterName,
-		m.weapon.Name,
-		damageToDeal,
-		m.CharacterName,
-		m.CharacterName,
-		m.HP, m.MaxHP)
+	damageToDeal := m.calculateDamage(m.weapon, isCritical)
+	bHit := d.TakeDamage(damageToDeal, true)
+	if bHit {
+		fmt.Printf("%v used their %v and dealt %v damage to %v\n%v now has %v/%v health",
+			m.CharacterName,
+			m.weapon.Name,
+			damageToDeal,
+			m.CharacterName,
+			m.CharacterName,
+			m.HP, m.MaxHP)
 
-	if isCritical {
-		fmt.Println("Critical Hit!")
+		if isCritical {
+			fmt.Println("Critical Hit!")
+		}
 	}
 
 }
 
-func (m MainCharacter) CalculateDamage(weapon Weapon, isCritical bool) int {
-	damage := int(float32(weapon.BaseDamage+m.NextAttackBonus) * m.StatMultiplier())
+func (m MainCharacter) calculateDamage(weapon Weapon, isCritical bool) int {
+	damage := int(float32(weapon.BaseDamage) * m.StatMultiplier())
 
 	if isCritical {
 		damage *= int(m.weapon.CriticalBonus)
@@ -143,7 +179,7 @@ func (m MainCharacter) CalculateDamage(weapon Weapon, isCritical bool) int {
 	return damage
 }
 
-func (m MainCharacter) IsCritical(w Weapon) bool {
+func (m MainCharacter) isCritical(w Weapon) bool {
 	critChance := w.CritChance + m.CritChance
 
 	rand := rand.Float32()
@@ -154,17 +190,13 @@ func (m MainCharacter) IsCritical(w Weapon) bool {
 func (m MainCharacter) GrantXP(xpToGrant int) {
 	m.XP += xpToGrant
 	if m.XP > 100 {
-		m.LevelUp()
+		m.levelUp()
 		m.XP = 0
 	}
 }
 
-func (m MainCharacter) LevelUp() {
+func (m MainCharacter) levelUp() {
 	m.Level++
-}
-
-func (m MainCharacter) StatMultiplier() float32 {
-	return 1 + ((float32(m.Level) * 0.1) - 0.1)
 }
 
 // could have just added a TakeDamage method to this AttackableObject struct
@@ -175,7 +207,7 @@ type AttackableObject struct {
 	Armour int
 }
 
-func (a AttackableObject) TakeDamage(nDamage int, bBlockable bool) bool {
+func (a *AttackableObject) TakeDamage(nDamage int, bBlockable bool) bool {
 	if bBlockable {
 		a.HP -= nDamage - a.Armour
 	} else {
