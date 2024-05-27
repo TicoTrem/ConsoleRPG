@@ -24,7 +24,7 @@ import (
 // the struct should own and not share this copy of the weapon
 
 type IDefend interface {
-	TakeDamage(nDamage int, bBlockable bool) bool
+	TakeDamage(nDamage int, bBlockable bool) (bool, string)
 	IsDead() bool
 }
 type IAttack interface {
@@ -32,6 +32,7 @@ type IAttack interface {
 }
 
 type CombatCharacter struct {
+	Character
 	MaxHP       int
 	HP          int
 	DodgeChance float32
@@ -40,23 +41,28 @@ type CombatCharacter struct {
 	weapon      Weapon
 }
 
-func (c *CombatCharacter) TakeDamage(nDamage int, bBlockable bool) bool {
-	dodged := false
+func (c *CombatCharacter) TakeDamage(nDamage int, bBlockable bool) (bool, string) {
+	bHit := true
+	var str string
 	if rand.Float32() > c.DodgeChance {
 		if bBlockable {
 			c.HP -= nDamage - c.Armour
 		} else {
 			c.HP -= nDamage
 		}
+		str = fmt.Sprintf("%v now has %v/%v health\n",
+			c.CharacterName,
+			c.HP,
+			c.MaxHP)
 	} else {
 		fmt.Println("Attack dodged, no damage was dealt")
-		dodged = true
+		bHit = false
 	}
-	return dodged
+	return bHit, str
 }
 
 func (c CombatCharacter) IsDead() bool {
-	if c.HP < 0 {
+	if c.HP <= 0 {
 		return true
 	} else {
 		return false
@@ -77,7 +83,6 @@ func (c Character) Say(msg string) {
 }
 
 type Enemy struct {
-	Character
 	CombatCharacter
 }
 
@@ -85,15 +90,12 @@ func (e Enemy) Attack(d IDefend) {
 	isCritical := e.isCritical(e.weapon)
 
 	damageToDeal := e.calculateDamage(e.weapon, isCritical)
-	bHit := d.TakeDamage(damageToDeal, true)
+	bHit, str := d.TakeDamage(damageToDeal, true)
 	if bHit {
-		fmt.Printf("%v used their %v and dealt %v damage to %v\n%v now has %v/%v health",
+		fmt.Printf("%v used their %v and dealt %v damage.\n"+str,
 			e.CharacterName,
 			e.weapon.Name,
-			damageToDeal,
-			e.CharacterName,
-			e.CharacterName,
-			e.HP, e.MaxHP)
+			damageToDeal)
 
 		if isCritical {
 			fmt.Println("Critical Hit!")
@@ -124,7 +126,6 @@ func (e Enemy) isCritical(w Weapon) bool {
 // we have Enemy and MainCharacter both with Level but we do not repeat code so we do not
 // care
 type MainCharacter struct {
-	Character
 	CombatCharacter
 	XP         int
 	CritChance float32
@@ -141,8 +142,7 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	}
 
 	return &MainCharacter{
-		Character:       Character{CharacterName: name, CatchPhrases: []string{"Yahoooo", "get rekt kid", "pfft Bozo"}},
-		CombatCharacter: CombatCharacter{MaxHP: 20, HP: 20, DodgeChance: 0.05, Armour: 0, Level: 1, weapon: weapon},
+		CombatCharacter: CombatCharacter{Character: Character{CharacterName: name, CatchPhrases: []string{"Yahoooo", "get rekt kid", "pfft Bozo"}}, MaxHP: 20, HP: 20, DodgeChance: 0.05, Armour: 0, Level: 1, weapon: weapon},
 	}
 
 }
@@ -152,15 +152,12 @@ func (m MainCharacter) Attack(d IDefend) {
 	isCritical := m.isCritical(m.weapon)
 
 	damageToDeal := m.calculateDamage(m.weapon, isCritical)
-	bHit := d.TakeDamage(damageToDeal, true)
+	bHit, str := d.TakeDamage(damageToDeal, true)
 	if bHit {
-		fmt.Printf("%v used their %v and dealt %v damage to %v\n%v now has %v/%v health",
+		fmt.Printf("%v used their %v and dealt %v damage.\n"+str,
 			m.CharacterName,
 			m.weapon.Name,
-			damageToDeal,
-			m.CharacterName,
-			m.CharacterName,
-			m.HP, m.MaxHP)
+			damageToDeal)
 
 		if isCritical {
 			fmt.Println("Critical Hit!")
@@ -207,13 +204,16 @@ type AttackableObject struct {
 	Armour int
 }
 
-func (a *AttackableObject) TakeDamage(nDamage int, bBlockable bool) bool {
+func (a *AttackableObject) TakeDamage(nDamage int, bBlockable bool) (bool, string) {
 	if bBlockable {
 		a.HP -= nDamage - a.Armour
 	} else {
 		a.HP -= nDamage
 	}
-	return true
+	str := fmt.Sprintf("%v now has %v health\n",
+		a.Name,
+		a.HP)
+	return true, str
 }
 
 func NewTree(health int) *AttackableObject {

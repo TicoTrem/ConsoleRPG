@@ -18,7 +18,7 @@ func main() {
 	DisplaySystemMessage(fmt.Sprintf("You obtained a %v!", MC.weapon.Name))
 
 	StartBattle(*MC, []Enemy{
-		{Character: Character{CharacterName: "John", CatchPhrases: []string{"Neil Doyle!!!!!"}}, CombatCharacter: CombatCharacter{HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}},
-		{Character: Character{CharacterName: "Tony", CatchPhrases: []string{"Neil Doyle!!!!!"}}, CombatCharacter: CombatCharacter{HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}},
-		{Character: Character{CharacterName: "Jessica", CatchPhrases: []string{"Neil Doyle!!!!!"}}, CombatCharacter: CombatCharacter{HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}}})
+		{CombatCharacter: CombatCharacter{Character: Character{CharacterName: "John", CatchPhrases: []string{"Neil Doyle!!!!!"}}, HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}},
+		{CombatCharacter: CombatCharacter{Character: Character{CharacterName: "Jessica", CatchPhrases: []string{"Neil Doyle!!!!!"}}, HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}},
+		{CombatCharacter: CombatCharacter{Character: Character{CharacterName: "Tony", CatchPhrases: []string{"Neil Doyle!!!!!"}}, HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}}})
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strconv"
 	"time"
 )
@@ -15,18 +16,17 @@ func StartBattle(MC MainCharacter, enemies []Enemy) bool {
 	enemiesCopy := make([]Enemy, len(enemies))
 	copy(enemiesCopy, enemies)
 
-	// delete by index
-	enemies = append(enemies[:0], enemies[0+1:]...)
-
 	for len(enemies) > 0 && !MC.IsDead() {
 		time.Sleep(1 * time.Second)
 		mcTakeTurn(MC, enemies)
-	}
 
-	for i := 0; i < len(enemies); i++ {
-		if !enemies[i].IsDead() && !MC.IsDead() {
-			time.Sleep(1 * time.Second)
-			enemies[i].Attack(&MC)
+		for i := 0; i < len(enemies); i++ {
+			print(!enemies[i].IsDead())
+			if !enemies[i].IsDead() && !MC.IsDead() {
+				time.Sleep(1 * time.Second)
+				fmt.Println("Attack!!!!!!")
+				enemies[i].Attack(&MC)
+			}
 		}
 	}
 
@@ -54,15 +54,26 @@ func mcTakeTurn(MC MainCharacter, enemies []Enemy) {
 		// dereference before indexing
 		chosenEnemy = &enemies[num-1]
 		MC.Attack(chosenEnemy)
-		fmt.Println(chosenEnemy.HP)
 		break
 	}
 
 	if chosenEnemy.IsDead() {
-		fmt.Println("It was a killing blow!")
-		fmt.Println(rand.Intn(len(MC.CatchPhrases)))
+		killEnemy(&enemies, *chosenEnemy, MC)
 	}
 
+}
+
+func killEnemy(enemies *[]Enemy, enemyToRemove Enemy, MC MainCharacter) bool {
+
+	for i, v := range *enemies {
+		if reflect.DeepEqual(v, enemyToRemove) {
+			*enemies = append((*enemies)[:i], (*enemies)[i+1:]...)
+			fmt.Println("It was a killing blow!")
+			fmt.Println(rand.Intn(len(MC.CatchPhrases)))
+			return true
+		}
+	}
+	panic("Tried to kill an enemy that is not in the enemies list")
 }
 
 func displayEnemies(enemies []Enemy) {
