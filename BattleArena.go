@@ -23,10 +23,10 @@ func StartBattle(MC MainCharacter, enemies []Enemy) bool {
 		mcTakeTurn(MC, enemies)
 	}
 
-	for _, enemy := range enemies {
-		if !enemy.IsDead() && !MC.IsDead() {
+	for i := 0; i < len(enemies); i++ {
+		if !enemies[i].IsDead() && !MC.IsDead() {
 			time.Sleep(1 * time.Second)
-			enemy.Attack(&MC)
+			enemies[i].Attack(&MC)
 		}
 	}
 
