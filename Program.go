@@ -18,7 +18,8 @@ func main() {
 	DisplaySystemMessage(fmt.Sprintf("You obtained a %v!", MC.weapon.Name))
 
 	StartBattle(*MC, []Enemy{
-		{CombatCharacter: CombatCharacter{Character: Character{CharacterName: "John", CatchPhrases: []string{"Neil Doyle!!!!!"}}, HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}},
-		{CombatCharacter: CombatCharacter{Character: Character{CharacterName: "Jessica", CatchPhrases: []string{"Neil Doyle!!!!!"}}, HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}},
-		{CombatCharacter: CombatCharacter{Character: Character{CharacterName: "Tony", CatchPhrases: []string{"Neil Doyle!!!!!"}}, HP: 20, MaxHP: 20, weapon: *NewFists(), DodgeChance: 0.05, Level: 1}}})
+		{CharacterComponent: CharacterComponent{CharacterName: "Neil", CatchPhrases: []string{"Neil Doyleee!!!!"}}, EnemyAttackComponent: EnemyAttackComponent{weapon: *NewFists()}, EnemyDefendComponent: EnemyDefendComponent{MaxHP: 20, HP: 20, Armour: 0, DodgeChance: 0.05}},
+		{CharacterComponent: CharacterComponent{CharacterName: "Seneca", CatchPhrases: []string{"Neil Doyleee!!!!"}}, EnemyAttackComponent: EnemyAttackComponent{weapon: *NewFists()}, EnemyDefendComponent: EnemyDefendComponent{MaxHP: 20, HP: 20, Armour: 0, DodgeChance: 0.05}},
+		{CharacterComponent: CharacterComponent{CharacterName: "Doyle", CatchPhrases: []string{"Neil Doyleee!!!!"}}, EnemyAttackComponent: EnemyAttackComponent{weapon: *NewFists()}, EnemyDefendComponent: EnemyDefendComponent{MaxHP: 20, HP: 20, Armour: 0, DodgeChance: 0.05}},
+	})
 }
