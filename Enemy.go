@@ -12,6 +12,10 @@ type Enemy struct {
 	Level int
 }
 
+func (e Enemy) GetStatMultiplier() float32 {
+	return 1 + ((float32(e.Level) * 0.1) - 0.1)
+}
+
 func (e Enemy) GetCritChance() float32 {
 	return e.weapon.CritChance
 }
@@ -66,6 +70,35 @@ type EnemyAttackComponent struct {
 }
 
 // TODO: Create a NewEnemy contructor that initializes each components interfaces
+
+// This function will take in an enemy pointer, and initialize the components interfaces to
+// the enemy itself, so that the components will have access to the methods they need.
+// Call this after creating the Enemy instance with the values you want.
+func initializeEnemyInterfaces(enemy *Enemy) {
+
+	// set up the enemy instance to satisfy be assigned to its components interfaces
+	enemy.EnemyAttackComponent.Named = enemy
+	enemy.EnemyAttackComponent.Criticaller = enemy
+	enemy.EnemyAttackComponent.StatMultiplier = enemy
+
+	enemy.EnemyDefendComponent.Named = enemy
+	enemy.EnemyDefendComponent.Criticaller = enemy
+	enemy.EnemyDefendComponent.StatMultiplier = enemy
+}
+
+func NewBozo(weapon Weapon, level int) *Enemy {
+
+	enemy := Enemy{
+		CharacterComponent{CharacterName: "Bozo", CatchPhrases: []string{"I'll bozo you!", "Get smoked bozo"}},
+		EnemyAttackComponent{weapon: weapon},
+		EnemyDefendComponent{MaxHP: 5, HP: 5, DodgeChance: 0.05, Armour: 1},
+		level,
+	}
+
+	initializeEnemyInterfaces(&enemy)
+
+	return &enemy
+}
 
 func (a EnemyAttackComponent) Attack(d IDefend) {
 	isCritical := a.isCritical()

@@ -21,12 +21,7 @@ func StartBattle(MC MainCharacter, enemies []Enemy) bool {
 		mcTakeTurn(MC, enemies)
 
 		for i := 0; i < len(enemies); i++ {
-			print(!enemies[i].IsDead())
-			if !enemies[i].IsDead() && !MC.IsDead() {
-				time.Sleep(1 * time.Second)
-				fmt.Println("Attack!!!!!!")
-				enemies[i].Attack(&MC)
-			}
+			enemyTakeTurn(&enemies[i], &MC)
 		}
 	}
 
@@ -37,6 +32,18 @@ func StartBattle(MC MainCharacter, enemies []Enemy) bool {
 	}
 
 	return MCWon
+}
+
+func enemyTakeTurn(enemy *Enemy, MC *MainCharacter) {
+	if !MC.IsDead() {
+		if !enemy.IsDead() {
+			time.Sleep(1 * time.Second)
+			enemy.Attack(MC)
+		}
+	} else {
+		fmt.Printf("%v has fallen to %v!\n", MC.CharacterName, enemy.CharacterName)
+		enemy.SayRandomCatchphrase()
+	}
 }
 
 func mcTakeTurn(MC MainCharacter, enemies []Enemy) {
@@ -59,6 +66,7 @@ func mcTakeTurn(MC MainCharacter, enemies []Enemy) {
 
 	if chosenEnemy.IsDead() {
 		killEnemy(&enemies, *chosenEnemy, MC)
+		MC.SayRandomCatchphrase()
 	}
 
 }
