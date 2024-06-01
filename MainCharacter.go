@@ -47,6 +47,9 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	// now pass the character as the object that satisfies the CharacterData interface
 	character.EnemyDefendComponent.Named = character
 	character.EnemyDefendComponent.StatMultiplier = character
+	character.MCAttackComponent.Named = character
+	character.MCAttackComponent.Criticaller = character
+	character.MCAttackComponent.StatMultiplier = character
 
 	return character
 

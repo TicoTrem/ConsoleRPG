@@ -26,6 +26,7 @@ type EnemyDefendComponent struct {
 	DodgeChance float32
 	Armour      int
 	Named       // will just be a pointer to the method that implements this
+	Criticaller
 	StatMultiplier
 }
 
@@ -64,8 +65,10 @@ type EnemyAttackComponent struct {
 	StatMultiplier
 }
 
+// TODO: Create a NewEnemy contructor that initializes each components interfaces
+
 func (a EnemyAttackComponent) Attack(d IDefend) {
-	isCritical := a.isCritical(a.weapon)
+	isCritical := a.isCritical()
 
 	damageToDeal := a.calculateDamage(a.weapon, isCritical)
 	bHit, str := d.TakeDamage(damageToDeal, true)
@@ -92,7 +95,7 @@ func (a EnemyAttackComponent) calculateDamage(weapon Weapon, isCritical bool) in
 	return damage
 }
 
-func (a EnemyAttackComponent) isCritical(w Weapon) bool {
+func (a EnemyAttackComponent) isCritical() bool {
 
 	rand := rand.Float32()
 	// if the random float is less than crit chance, it is a critical hit
