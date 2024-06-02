@@ -69,8 +69,6 @@ type EnemyAttackComponent struct {
 	StatMultiplier
 }
 
-// TODO: Create a NewEnemy contructor that initializes each components interfaces
-
 // This function will take in an enemy pointer, and initialize the components interfaces to
 // the enemy itself, so that the components will have access to the methods they need.
 // Call this after creating the Enemy instance with the values you want.
@@ -91,7 +89,7 @@ func NewBozo(weapon Weapon, level int) *Enemy {
 	enemy := Enemy{
 		CharacterComponent{CharacterName: "Bozo", CatchPhrases: []string{"I'll bozo you!", "Get smoked bozo"}},
 		EnemyAttackComponent{weapon: weapon},
-		EnemyDefendComponent{MaxHP: 5, HP: 5, DodgeChance: 0.05, Armour: 1},
+		EnemyDefendComponent{MaxHP: 15, HP: 15, DodgeChance: 0.05, Armour: 1},
 		level,
 	}
 

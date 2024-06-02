@@ -26,6 +26,33 @@ func (c MainCharacter) GetStatMultiplier() float32 {
 func (c MainCharacter) GetCritChance() float32 {
 	return c.CritChance + c.weapon.CritChance
 }
+func (c MainCharacter) DisplayCharacterInfo() {
+
+	numDashes := 15
+	topLine := ""
+	for i := 0; i < numDashes*2; i++ {
+		if i == numDashes {
+			topLine += c.GetName()
+		}
+		topLine += "-"
+	}
+	fmt.Println(topLine)
+	fmt.Printf("Level: %v\n", c.Level)
+	fmt.Printf("XP: %v/%v\n", c.XP, c.amountToLevelUp)
+	fmt.Printf("HP: %v/%v\n", c.HP, c.MaxHP)
+	fmt.Printf("Armour: %v\n", c.Armour)
+	fmt.Printf("Weapon: %v\n\tBase Damage: %v\n\tDamage Type: %v\n\tCrit Chance: %v\n\tCrit bonus damage: %v\n",
+		c.weapon.Name,
+		c.weapon.BaseDamage,
+		c.weapon.DamageType,
+		c.CritChance,
+		c.weapon.CriticalBonus)
+	btmString := ""
+	for i := 0; i < len(c.GetName())+(numDashes*2); i++ {
+		btmString += "-"
+	}
+	fmt.Println(btmString)
+}
 
 func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	if name == "" {
@@ -50,6 +77,7 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	character.MCAttackComponent.Named = character
 	character.MCAttackComponent.Criticaller = character
 	character.MCAttackComponent.StatMultiplier = character
+	character.MCLevelComponent.Named = character
 
 	return character
 
@@ -65,7 +93,7 @@ type MCAttackComponent struct {
 
 // now we can attack anything that can take damage
 func (m MCAttackComponent) Attack(d IDefend) {
-	isCritical := m.isCritical(m.weapon)
+	isCritical := m.isCritical()
 
 	damageToDeal := m.calculateDamage(m.weapon, isCritical)
 	bHit, str := d.TakeDamage(damageToDeal, true)
@@ -92,7 +120,7 @@ func (m MCAttackComponent) calculateDamage(weapon Weapon, isCritical bool) int {
 	return damage
 }
 
-func (m MCAttackComponent) isCritical(w Weapon) bool {
+func (m MCAttackComponent) isCritical() bool {
 
 	rand := rand.Float32()
 	// if the random float is less than crit chance, it is a critical hit
@@ -100,19 +128,24 @@ func (m MCAttackComponent) isCritical(w Weapon) bool {
 }
 
 type MCLevelComponent struct {
-	Level int
-	XP    int
+	Level           int
+	XP              int
+	amountToLevelUp int
+	Named
 }
 
-func (l MCLevelComponent) levelUp() {
+func (l *MCLevelComponent) levelUp() {
 	l.Level++
 	l.XP = 0
+	DisplaySystemMessage(fmt.Sprintf("%v has reached level %v!", l.GetName(), l.Level))
 }
 
-func (l MCLevelComponent) GrantXP(nXP int) {
+func (l *MCLevelComponent) GrantXP(nXP int) {
 	l.XP += nXP
-	if l.XP > 100 {
+	fmt.Printf("%v gained %v experience\n", l.GetName(), nXP)
+	l.levelUp()
+	if l.XP > l.amountToLevelUp {
 		l.levelUp()
-		l.XP = 0
+		l.amountToLevelUp += 50
 	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"strconv"
 	"time"
@@ -11,17 +10,17 @@ import (
 var baseXPToGrant int = 10
 
 // to be in a battle, they must be able to defend
-func StartBattle(MC MainCharacter, enemies []Enemy) bool {
+func StartBattle(MC *MainCharacter, enemies []Enemy) bool {
 
 	enemiesCopy := make([]Enemy, len(enemies))
 	copy(enemiesCopy, enemies)
 
 	for len(enemies) > 0 && !MC.IsDead() {
 		time.Sleep(1 * time.Second)
-		mcTakeTurn(MC, enemies)
+		mcTakeTurn(MC, &enemies)
 
 		for i := 0; i < len(enemies); i++ {
-			enemyTakeTurn(&enemies[i], &MC)
+			enemyTakeTurn(&enemies[i], MC)
 		}
 	}
 
@@ -46,38 +45,36 @@ func enemyTakeTurn(enemy *Enemy, MC *MainCharacter) {
 	}
 }
 
-func mcTakeTurn(MC MainCharacter, enemies []Enemy) {
-	displayEnemies(enemies)
+func mcTakeTurn(MC *MainCharacter, enemies *[]Enemy) {
+	displayEnemies(*enemies)
 	var chosenEnemy *Enemy
 	for {
 		var enemySelection string
 		fmt.Println("Select an enemy to attack (Enter their number)")
 		fmt.Scanln(&enemySelection)
 		num, err := strconv.Atoi(enemySelection)
-		if err != nil || num > len(enemies) || num < 1 {
+		if err != nil || num > len(*enemies) || num < 1 {
 			fmt.Println("Invalid Selection!")
 			continue
 		}
 		// dereference before indexing
-		chosenEnemy = &enemies[num-1]
+		chosenEnemy = &((*enemies)[num-1])
 		MC.Attack(chosenEnemy)
 		break
 	}
 
 	if chosenEnemy.IsDead() {
-		killEnemy(&enemies, *chosenEnemy, MC)
+		killEnemy(enemies, chosenEnemy)
 		MC.SayRandomCatchphrase()
 	}
-
 }
 
-func killEnemy(enemies *[]Enemy, enemyToRemove Enemy, MC MainCharacter) bool {
+func killEnemy(enemies *[]Enemy, enemyToRemove *Enemy) bool {
 
 	for i, v := range *enemies {
-		if reflect.DeepEqual(v, enemyToRemove) {
+		if reflect.DeepEqual(v, *enemyToRemove) {
 			*enemies = append((*enemies)[:i], (*enemies)[i+1:]...)
 			fmt.Println("It was a killing blow!")
-			fmt.Println(rand.Intn(len(MC.CatchPhrases)))
 			return true
 		}
 	}
@@ -90,7 +87,7 @@ func displayEnemies(enemies []Enemy) {
 	}
 }
 
-func grantExperience(MC MainCharacter, originalEnemies []Enemy) {
+func grantExperience(MC *MainCharacter, originalEnemies []Enemy) {
 
 	for _, enemy := range originalEnemies {
 		MC.GrantXP(enemy.Level * baseXPToGrant)

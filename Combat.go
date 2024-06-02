@@ -29,11 +29,11 @@ type IDefend interface {
 type IAttack interface {
 	Attack(d IDefend)
 }
-
 type ILevel interface {
 	levelUp()
 	GrantXP(nXP int)
 }
+
 type Named interface {
 	GetName() string
 }

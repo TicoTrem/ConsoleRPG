@@ -15,9 +15,8 @@ func main() {
 
 	DisplaySystemMessage(fmt.Sprintf("You obtained a %v!", MC.weapon.Name))
 
-	StartBattle(*MC, []Enemy{
-		*NewBozo(*NewTrainingSword(), 1),
-		*NewBozo(*NewTrainingSword(), 1),
-		*NewBozo(*NewTrainingSword(), 1),
+	StartBattle(MC, []Enemy{
+		*NewBozo(*NewFists(), 1),
 	})
+	MC.DisplayCharacterInfo()
 }
