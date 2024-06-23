@@ -34,6 +34,10 @@ type ILevel interface {
 	GrantXP(nXP int)
 }
 
+type Healthed interface {
+	GetMaxHealth() int
+	SetMaxHealth(amount int)
+}
 type Named interface {
 	GetName() string
 }

@@ -11,9 +11,8 @@ import (
 type MainCharacter struct {
 	CharacterComponent
 	MCAttackComponent
-	EnemyDefendComponent
+	CombatDefendComponent
 	MCLevelComponent
-	XP         int
 	CritChance float32
 }
 
@@ -26,6 +25,16 @@ func (c MainCharacter) GetStatMultiplier() float32 {
 func (c MainCharacter) GetCritChance() float32 {
 	return c.CritChance + c.weapon.CritChance
 }
+func (c MainCharacter) GetMaxHealth() int {
+	return c.MaxHP
+}
+func (c *MainCharacter) SetMaxHealth(nAmount int) {
+	nDifference := c.MaxHP - nAmount
+	c.MaxHP = nAmount
+	// Add the amount that maxhp increased to the current hp pool
+	c.HP += nDifference
+}
+
 func (c MainCharacter) DisplayCharacterInfo() {
 
 	numDashes := 15
@@ -39,7 +48,11 @@ func (c MainCharacter) DisplayCharacterInfo() {
 	fmt.Println(topLine)
 	fmt.Printf("Level: %v\n", c.Level)
 	fmt.Printf("XP: %v/%v\n", c.XP, c.amountToLevelUp)
-	fmt.Printf("HP: %v/%v\n", c.HP, c.MaxHP)
+	hp := c.HP
+	if c.HP < 0 {
+		hp = 0
+	}
+	fmt.Printf("HP: %v/%v\n", hp, c.MaxHP)
 	fmt.Printf("Armour: %v\n", c.Armour)
 	fmt.Printf("Weapon: %v\n\tBase Damage: %v\n\tDamage Type: %v\n\tCrit Chance: %v\n\tCrit bonus damage: %v\n",
 		c.weapon.Name,
@@ -65,19 +78,21 @@ func NewMainCharacter(name string, weapon Weapon) *MainCharacter {
 	}
 
 	character := &MainCharacter{
-		CharacterComponent:   CharacterComponent{CharacterName: name, CatchPhrases: []string{"Yahoooo", "get rekt kid", "pfft Bozo"}},
-		MCAttackComponent:    MCAttackComponent{weapon: weapon},
-		EnemyDefendComponent: EnemyDefendComponent{MaxHP: 20, HP: 20, Armour: 0, DodgeChance: 0.05},
-		MCLevelComponent:     MCLevelComponent{Level: 1, XP: 0},
+		CharacterComponent:    CharacterComponent{CharacterName: name, CatchPhrases: []string{"Yahoooo", "get rekt kid", "pfft Bozo"}},
+		MCAttackComponent:     MCAttackComponent{weapon: weapon},
+		CombatDefendComponent: CombatDefendComponent{MaxHP: 20, HP: 20, Armour: 0, DodgeChance: 0.05},
+		MCLevelComponent:      MCLevelComponent{Level: 1, XP: 0, amountToLevelUp: 20},
 	}
 
 	// now pass the character as the object that satisfies the CharacterData interface
-	character.EnemyDefendComponent.Named = character
-	character.EnemyDefendComponent.StatMultiplier = character
+	character.CombatDefendComponent.Named = character
+	character.CombatDefendComponent.StatMultiplier = character
 	character.MCAttackComponent.Named = character
 	character.MCAttackComponent.Criticaller = character
 	character.MCAttackComponent.StatMultiplier = character
 	character.MCLevelComponent.Named = character
+	character.MCLevelComponent.StatMultiplier = character
+	character.MCLevelComponent.Healthed = character
 
 	return character
 
@@ -98,10 +113,9 @@ func (m MCAttackComponent) Attack(d IDefend) {
 	damageToDeal := m.calculateDamage(m.weapon, isCritical)
 	bHit, str := d.TakeDamage(damageToDeal, true)
 	if bHit {
-		fmt.Printf("%v used their %v and dealt %v damage.\n"+str,
+		fmt.Printf("%v used their %v and dealt "+str,
 			m.GetName(),
-			m.weapon.Name,
-			damageToDeal)
+			m.weapon.Name)
 
 		if isCritical {
 			fmt.Println("Critical Hit!")
@@ -131,21 +145,25 @@ type MCLevelComponent struct {
 	Level           int
 	XP              int
 	amountToLevelUp int
+	SkillTokens     int
 	Named
+	StatMultiplier
+	Healthed
 }
 
 func (l *MCLevelComponent) levelUp() {
 	l.Level++
 	l.XP = 0
+	l.amountToLevelUp += 50
+	l.SetMaxHealth(int(float32(l.GetMaxHealth()) * l.GetStatMultiplier()))
+
 	DisplaySystemMessage(fmt.Sprintf("%v has reached level %v!", l.GetName(), l.Level))
 }
 
 func (l *MCLevelComponent) GrantXP(nXP int) {
 	l.XP += nXP
 	fmt.Printf("%v gained %v experience\n", l.GetName(), nXP)
-	l.levelUp()
-	if l.XP > l.amountToLevelUp {
+	if l.XP >= l.amountToLevelUp {
 		l.levelUp()
-		l.amountToLevelUp += 50
 	}
 }

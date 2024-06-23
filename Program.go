@@ -20,7 +20,11 @@ func main() {
 		*NewBozo(*NewFists(), 1),
 	})
 	MC.DisplayCharacterInfo()
-	fmt.Println("HI ANNA! This is the current end of the game, it is not much right now, but the systems" +
-		"in place to make it highly expandable are extensive!")
+
+	StartBattle(MC, []Enemy{
+		*NewBozo(*NewFists(), 1),
+	})
+
+	MC.DisplayCharacterInfo()
 	time.Sleep(60 * time.Second)
 }

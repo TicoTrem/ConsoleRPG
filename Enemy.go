@@ -8,7 +8,7 @@ import (
 type Enemy struct {
 	CharacterComponent
 	EnemyAttackComponent
-	EnemyDefendComponent
+	CombatDefendComponent
 	Level int
 }
 
@@ -24,7 +24,7 @@ func (e Enemy) GetName() string {
 	return e.CharacterName
 }
 
-type EnemyDefendComponent struct {
+type CombatDefendComponent struct {
 	MaxHP       int
 	HP          int
 	DodgeChance float32
@@ -34,16 +34,18 @@ type EnemyDefendComponent struct {
 	StatMultiplier
 }
 
-func (d *EnemyDefendComponent) TakeDamage(nDamage int, bBlockable bool) (bool, string) {
+func (d *CombatDefendComponent) TakeDamage(nDamage int, bBlockable bool) (bool, string) {
 	bHit := true
 	var str string
 	if rand.Float32() > d.DodgeChance {
 		if bBlockable {
-			d.HP -= nDamage - d.Armour
+			nDamage -= d.Armour
+			d.HP -= nDamage
 		} else {
 			d.HP -= nDamage
 		}
-		str = fmt.Sprintf("%v now has %v/%v health\n",
+		str = fmt.Sprintf("%v to %v, who now has %v/%v health\n",
+			nDamage,
 			d.GetName(),
 			d.HP,
 			d.MaxHP)
@@ -54,7 +56,7 @@ func (d *EnemyDefendComponent) TakeDamage(nDamage int, bBlockable bool) (bool, s
 	return bHit, str
 }
 
-func (d EnemyDefendComponent) IsDead() bool {
+func (d CombatDefendComponent) IsDead() bool {
 	if d.HP <= 0 {
 		return true
 	} else {
@@ -79,9 +81,9 @@ func initializeEnemyInterfaces(enemy *Enemy) {
 	enemy.EnemyAttackComponent.Criticaller = enemy
 	enemy.EnemyAttackComponent.StatMultiplier = enemy
 
-	enemy.EnemyDefendComponent.Named = enemy
-	enemy.EnemyDefendComponent.Criticaller = enemy
-	enemy.EnemyDefendComponent.StatMultiplier = enemy
+	enemy.CombatDefendComponent.Named = enemy
+	enemy.CombatDefendComponent.Criticaller = enemy
+	enemy.CombatDefendComponent.StatMultiplier = enemy
 }
 
 func NewBozo(weapon Weapon, level int) *Enemy {
@@ -89,11 +91,17 @@ func NewBozo(weapon Weapon, level int) *Enemy {
 	enemy := Enemy{
 		CharacterComponent{CharacterName: "Bozo", CatchPhrases: []string{"I'll bozo you!", "Get smoked bozo"}},
 		EnemyAttackComponent{weapon: weapon},
-		EnemyDefendComponent{MaxHP: 15, HP: 15, DodgeChance: 0.05, Armour: 1},
+		CombatDefendComponent{MaxHP: 15, HP: 15, DodgeChance: 0.05, Armour: 1},
 		level,
 	}
 
 	initializeEnemyInterfaces(&enemy)
+
+	// the enemies level adjusts its hp and armour. The attack is adjusted in the attack method
+	enemy.MaxHP = int(enemy.GetStatMultiplier() * float32(enemy.MaxHP))
+	enemy.HP = enemy.MaxHP
+
+	enemy.Armour = int(enemy.GetStatMultiplier() * float32(enemy.Armour))
 
 	return &enemy
 }
@@ -104,10 +112,9 @@ func (a EnemyAttackComponent) Attack(d IDefend) {
 	damageToDeal := a.calculateDamage(a.weapon, isCritical)
 	bHit, str := d.TakeDamage(damageToDeal, true)
 	if bHit {
-		fmt.Printf("%v used their %v and dealt %v damage.\n"+str,
+		fmt.Printf("%v used their %v and dealt "+str,
 			a.GetName(),
-			a.weapon.Name,
-			damageToDeal)
+			a.weapon.Name)
 
 		if isCritical {
 			fmt.Println("Critical Hit!")
