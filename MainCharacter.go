@@ -145,7 +145,9 @@ type MCLevelComponent struct {
 	Level           int
 	XP              int
 	amountToLevelUp int
-	SkillTokens     int
+	// TODO add the skill tokens and get one for each level up
+	// this can increase things like armour and dodge chance.
+	// SkillTokens     int
 	Named
 	StatMultiplier
 	Healthed
