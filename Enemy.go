@@ -106,6 +106,25 @@ func NewBozo(weapon Weapon, level int) *Enemy {
 	return &enemy
 }
 
+func NewRainbowUnicorn(weapon Weapon, level int) *Enemy {
+	enemy := Enemy{
+		CharacterComponent{CharacterName: "Rainbow Unicorn", CatchPhrases: []string{"Magnifique!", "Extraordinary!"}},
+		EnemyAttackComponent{weapon: weapon},
+		CombatDefendComponent{MaxHP: 12, HP: 15, DodgeChance: 0.15, Armour: 0},
+		level,
+	}
+
+	initializeEnemyInterfaces(&enemy)
+
+	// the enemies level adjusts its hp and armour. The attack is adjusted in the attack method
+	enemy.MaxHP = int(enemy.GetStatMultiplier() * float32(enemy.MaxHP))
+	enemy.HP = enemy.MaxHP
+
+	enemy.Armour = int(enemy.GetStatMultiplier() * float32(enemy.Armour))
+
+	return &enemy
+}
+
 func (a EnemyAttackComponent) Attack(d IDefend) {
 	isCritical := a.isCritical()
 

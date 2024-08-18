@@ -18,13 +18,14 @@ func main() {
 
 	StartBattle(MC, []Enemy{
 		*NewBozo(*NewFists(), 1),
+		// *NewRainbowUnicorn(*NewFists(), 2),
 	})
 	MC.DisplayCharacterInfo()
 
-	StartBattle(MC, []Enemy{
-		*NewBozo(*NewFists(), 1),
-	})
+	fmt.Println("Fantastic work, that would've been embarassing if you lost...")
+	fmt.Println("Well we don't have enough time to explain EVERYTHING to EVERYONE.")
+	fmt.Println("Go down one of these paths and you should end up at a small settlement.")
+	fmt.Println("Look for a woman named Giji. Bye.")
 
-	MC.DisplayCharacterInfo()
 	time.Sleep(60 * time.Second)
 }
